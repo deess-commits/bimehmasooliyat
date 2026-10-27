@@ -1,0 +1,83 @@
+# راهنمای استقرار روی Vercel — bimehmasooliyat.ir
+
+این پروژه از قبل برای Vercel آماده شده است. فقط مراحل زیر را طی کنید.
+
+---
+
+## ۱) ایمپورت ریپو در Vercel
+
+1. وارد [vercel.com/new](https://vercel.com/new) شوید (با همان اکانت GitHub که ریپو در آن است)
+2. روی **Import Git Repository** کلیک کنید و ریپو `bimehmasooliyat` را انتخاب کنید
+3. Vercel به‌طور خودکار تشخیص می‌دهد:
+   - **Framework Preset:** Next.js
+   - **Build Command:** `npm run build` (پیش‌فرض — دست نزنید)
+   - **Install Command:** خودکار (bun.lock موجود است، Vercel با bun نصب می‌کند)
+4. فعلاً Deploy نزنید — اول متغیرهای محیطی بخش بعد را تنظیم کنید
+
+## ۲) متغیرهای محیطی
+
+در همان صفحه ایمپورت (یا بعداً در `Settings → Environment Variables`) این مقادیر را وارد کنید:
+
+| متغیر | مقدار | الزامی | توضیح |
+|---|---|---|---|
+| `DATABASE_URL` | `file:./db/custom.db` | ✅ | مسیر فایل SQLite — دقیقاً همین مقدار |
+| `ADMIN_PASSWORD` | یک رمز قوی دلخواه | ✅ توصیه‌شده | ورود به `/admin` — بدون آن از مقدار پیش‌فرض استفاده می‌شود |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | توکن Google Search Console | اختیاری | متاتگ تأیید مالکیت |
+| `NEXT_PUBLIC_BING_SITE_VERIFICATION` | توکن Bing Webmaster | اختیاری | متاتگ تأیید مالکیت |
+| `NEXT_PUBLIC_YANDEX_VERIFICATION` | توکن Yandex Webmaster | اختیاری | متاتگ تأیید مالکیت |
+
+> ⚠️ مقدار `DATABASE_URL` را حتماً به شکل نسبی `file:./db/custom.db` وارد کنید؛
+> مسیر مطلق سندباکس (`/home/z/...`) روی Vercel کار نمی‌کند.
+
+سپس **Deploy** را بزنید. اولین بیلد ۲ تا ۴ دقیقه طول می‌کشد.
+
+## ۳) اتصال دامنه bimehmasooliyat.ir
+
+در `Settings → Domains` هر دو را اضافه کنید:
+
+| دامنه | رکورد DNS |
+|---|---|
+| `bimehmasooliyat.ir` | `A` → `76.76.21.21` |
+| `www.bimehmasooliyat.ir` | `CNAME` → `cname.vercel-dns.com` |
+
+- دامنه اصلی (apex) را به‌عنوان **Primary** انتخاب کنید تا www به آن redirect شود
+- اگر DNS را در همان ثبت‌کننده فعلی نگه می‌دارید، رکوردها را همان‌جا ویرایش کنید
+- گواهی SSL به‌طور خودکار صادر می‌شود
+
+## ۴) نحوه کار دیتابیس SQLite روی Vercel (مهم)
+
+- **محتوای سایت** (۳۳ محصول، راهنماها، شهرها، واژه‌نامه، مقالات): از فایل
+  `db/custom.db` که در ریپو committed شده در زمان بیلد خوانده می‌شود → کاملاً پایدار
+- **فرم‌ها** (استعلام قیمت، تماس، خبرنامه، نظرات): در runtime تابع serverless
+  فایل دیتابیس به‌طور خودکار در `/tmp` کپی می‌شود و نوشتن‌ها آنجا ذخیره می‌گردد
+
+> ⚠️ محدودیت: فضای `/tmp` هر نمونه serverless **موقتی** است و با cold start بعدی
+> بازنشانی می‌شود؛ یعنی ثبت‌نام‌های فرم ممکن است بین نمونه‌های مختلف از بین بروند.
+>
+> 🔁 برای ذخیره‌سازی دائمی فرم‌ها، بعداً می‌توانید به سرویس دیتابیس ابری مهاجرت کنید:
+> **Neon** یا **Vercel Postgres** (تغییر provider در `prisma/schema.prisma`) —
+> ساختار schema فعلی سازگار است و فقط provider و `DATABASE_URL` عوض می‌شود.
+
+## ۵) چک‌لیست بعد از دیپلوی
+
+- [ ] باز کردن `https://bimehmasooliyat.ir` — صفحه اصلی بدون خطا
+- [ ] تست فرم استعلام قیمت (باید کد رهگیری بدهد)
+- [ ] `https://bimehmasooliyat.ir/sitemap.xml` باز شود
+- [ ] `https://bimehmasooliyat.ir/robots.txt` باز شود
+- [ ] `https://bimehmasooliyat.ir/llms.txt` باز شود
+- [ ] ورود به `/admin` با رمز جدید
+- [ ] تأیید مالکیت در [Google Search Console](https://search.google.com/search-console) و ثبت sitemap
+- [ ] تأیید مالکیت در [Bing Webmaster](https://www.bing.com/webmasters) و [Yandex Webmaster](https://webmaster.yandex.com)
+- [ ] اجرای `bun run seo:ping` در محیط محلی برای پینگ IndexNow
+
+## ۶) نکات نگهداری
+
+- هر push به `main` → دیپلوی production خودکار
+- هر Pull Request → دیپلوی preview با URL جدا
+- برای رول‌بک: `Deployments → آخرین نسخه سالم → Promote to Production`
+- لاگ‌ها: `Deployments → functions` یا تب **Runtime Logs**
+
+---
+
+در صورت بروز خطای بیلد، اول `Build Logs` در Vercel را بررسی کنید؛
+اکثر خطاها با متغیر `DATABASE_URL` نامعتبر مرتبط‌اند.
