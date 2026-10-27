@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, ShieldCheck, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const EN_NAV = [
   { href: "/en", label: "Home" },
@@ -33,9 +33,7 @@ export function EnSiteHeader() {
           className="flex items-center gap-2.5"
           aria-label="Iran Liability Insurance — English home"
         >
-          <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <ShieldCheck className="size-5" aria-hidden="true" />
-          </span>
+          <img src="/bimeh-iran-emblem.png" alt="Iran Insurance emblem" className="size-9 shrink-0 rounded-xl bg-white object-contain p-1 shadow-sm ring-1 ring-black/5" />
           <span className="leading-tight">
             <span className="block text-[15px] font-extrabold">Iran Liability Insurance</span>
             <span className="block text-[11px] text-muted-foreground">

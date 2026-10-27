@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPin, Phone, Mail, ShieldCheck, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import { toFaDigits } from "@/lib/format";
 import { NewsletterForm } from "@/components/newsletter-form";
@@ -69,9 +69,7 @@ export function SiteFooter() {
           {/* Brand + NAP */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-                <ShieldCheck className="size-6" aria-hidden="true" />
-              </span>
+              <img src="/bimeh-iran-emblem.png" alt="آرم بیمه ایران" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1 ring-1 ring-black/5" />
               <div>
                 <p className="font-extrabold">{siteConfig.name}</p>
                 <p className="text-[11px] text-muted-foreground">{siteConfig.nameEn}</p>

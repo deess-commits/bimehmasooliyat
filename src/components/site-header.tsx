@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, FileSearch, Landmark, Menu, Phone, ShieldCheck, Stethoscope, Factory, Users, BookOpen, ScrollText, Gauge, Percent, RefreshCw, FileText, Scale, GitCompareArrows, ClipboardCheck, Rocket, FileSignature, Briefcase, HeartPulse, CalendarHeart } from "lucide-react";
+import { ChevronDown, FileSearch, Landmark, Menu, Phone, Stethoscope, Factory, Users, BookOpen, ScrollText, Gauge, Percent, RefreshCw, FileText, Scale, GitCompareArrows, ClipboardCheck, Rocket, FileSignature, Briefcase, HeartPulse, CalendarHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -59,9 +59,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 me-2 shrink-0" aria-label="بیمه مسئولیت ایران — صفحه اصلی">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <ShieldCheck className="size-6" aria-hidden="true" />
-          </span>
+          <img src="/bimeh-iran-emblem.png" alt="آرم بیمه ایران" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1 shadow-sm ring-1 ring-black/5" />
           <span className="hidden sm:block leading-tight">
             <span className="block font-extrabold text-[15px]">بیمه مسئولیت ایران</span>
             <span className="block text-[11px] text-muted-foreground">نماینده رسمی بیمه ایران</span>
