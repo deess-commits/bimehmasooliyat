@@ -14,8 +14,14 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#047857",
     icons: [
       {
+        src: "/bimeh-iran-emblem.png",
+        sizes: "256x256",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
         src: "/logo.png",
-        sizes: "512x512",
+        sizes: "316x316",
         type: "image/png",
         purpose: "any",
       },
