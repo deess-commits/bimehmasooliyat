@@ -6,7 +6,8 @@ import { ReviewForm } from "@/components/review-form";
 import { SectionHeading } from "@/components/section-heading";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getAllProducts, getApprovedReviews } from "@/lib/data";
+import { getAllProducts } from "@/lib/data";
+import { getApprovedReviews } from "@/lib/reviews";
 import { JsonLd } from "@/lib/seo";
 import { faDate } from "@/lib/format";
 

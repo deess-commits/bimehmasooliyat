@@ -1,4 +1,13 @@
-import { db } from "@/lib/db";
+// ─── لایه محتوای استاتیک — بدون دیتابیس ─────────────────────────────
+// منبع حقیقت محتوا، فایل‌های prisma/seed-data است. این ماژول همان
+// کوئری‌های قبلی را معادل‌سازی می‌کند تا خروجی تمام صفحات بایت‌به‌بایت
+// با نسخه دیتابیس‌محور یکسان بماند؛ اما هیچ دسترسی به دیتابیس ندارد.
+// مزیت: تمام صفحات محتوایی روی Vercel کاملاً استاتیک/ISR از CDN سرو
+// می‌شوند — سریع‌تر، ارزان‌تر و بدون وابستگی به runtime دیتابیس.
+// دیتابیس فقط برای داده‌های کاربر استفاده می‌شود:
+//   استعلام‌ها → /api/quote | پیام‌ها → /api/contact
+//   خبرنامه → /api/newsletter | نظرات (پویا) → lib/reviews.ts
+
 import type {
   CategoryKey,
   SeedArticle,
@@ -8,305 +17,193 @@ import type {
   SeedGlossaryTerm,
   SeedProduct,
 } from "@/prisma/seed-data/types";
+import { professionalProducts } from "@/prisma/seed-data/products-professional";
+import { commercialProducts } from "@/prisma/seed-data/products-commercial";
+import { corporatePublicProducts } from "@/prisma/seed-data/products-corporate-public";
+import { cities as citySeed } from "@/prisma/seed-data/cities";
+import { articles as articleSeed } from "@/prisma/seed-data/articles";
+import { glossaryTerms as glossarySeed } from "@/prisma/seed-data/glossary";
+import {
+  categories as categorySeed,
+  authors as authorSeed,
+  generalFaqs,
+  legalSourceItems,
+} from "@/prisma/seed-data/site";
 
-// ─── Mappers: Prisma row → typed shape ─────────────────────────────
+// تاریخ درج seed (تقویم نمایشی مقالات — همان مقدار دیتابیس قبلی)
+const SEED_PUBLISHED_AT_MS = 1792909426347;
 
-type ProductRow = {
-  slug: string;
-  categoryKey: string;
-  nameFa: string;
-  nameEn: string;
-  audienceFa: string;
-  summaryFa: string;
-  answerBlock: string;
-  whoCovered: unknown;
-  coverages: unknown;
-  exclusions: unknown;
-  conditions: unknown;
-  documents: unknown;
-  buySteps: unknown;
-  claimSteps: unknown;
-  legalSources: unknown;
-  keywords: unknown;
-  seoTitle: string;
-  seoDescription: string;
-  priceFromFa: string | null;
-  phase: number;
-  featured: boolean;
-  reviewDate: string;
-  order: number;
-};
+// ─── محصولات ───────────────────────────────────────────────────────
 
-function mapProduct(row: ProductRow): SeedProduct {
-  return {
-    slug: row.slug,
-    category: row.categoryKey as CategoryKey,
-    nameFa: row.nameFa,
-    nameEn: row.nameEn,
-    audienceFa: row.audienceFa,
-    summaryFa: row.summaryFa,
-    answerBlock: row.answerBlock,
-    whoCovered: row.whoCovered as string[],
-    coverages: row.coverages as SeedProduct["coverages"],
-    exclusions: row.exclusions as string[],
-    conditions: row.conditions as string[],
-    documents: row.documents as string[],
-    buySteps: row.buySteps as SeedProduct["buySteps"],
-    claimSteps: row.claimSteps as SeedProduct["claimSteps"],
-    legalSources: row.legalSources as SeedProduct["legalSources"],
-    keywords: row.keywords as string[],
-    seoTitle: row.seoTitle,
-    seoDescription: row.seoDescription,
-    priceFromFa: row.priceFromFa ?? undefined,
-    phase: row.phase as 1 | 2,
-    featured: row.featured,
-    reviewDate: row.reviewDate,
-    faqs: [],
-  };
+// ترتیب seed: professional → commercial → corporatePublic و order = i+1
+// (مطابق prisma/seed.ts) — سپس مرتب‌سازی نهایی order asc (و nameFa به‌عنوان
+// tiebreak، مطابق orderBy قبلی دیتابیس)
+const sortedProducts: SeedProduct[] = [
+  ...professionalProducts,
+  ...commercialProducts,
+  ...corporatePublicProducts,
+]
+  .map((p, i) => ({ p, order: i + 1 }))
+  .sort((a, b) => a.order - b.order || a.p.nameFa.localeCompare(b.p.nameFa, "fa"))
+  .map((x) => x.p);
+
+/** همان خروجی mapProduct قبلی — faqs همیشه خالی (از getProductFaqs جداگانه خوانده می‌شود) */
+function toPublicProduct(p: SeedProduct): SeedProduct {
+  return { ...p, featured: p.featured ?? false, faqs: [] };
 }
 
-// ─── Queries ───────────────────────────────────────────────────────
-
 export async function getAllProducts(): Promise<SeedProduct[]> {
-  const rows = await db.liabilityProduct.findMany({
-    orderBy: [{ order: "asc" }, { nameFa: "asc" }],
-  });
-  return rows.map(mapProduct);
+  return sortedProducts.map(toPublicProduct);
 }
 
 export async function getProductsByCategory(
   key: CategoryKey,
 ): Promise<SeedProduct[]> {
-  const rows = await db.liabilityProduct.findMany({
-    where: { categoryKey: key },
-    orderBy: [{ order: "asc" }, { nameFa: "asc" }],
-  });
-  return rows.map(mapProduct);
+  return sortedProducts
+    .filter((p) => p.category === key)
+    .map(toPublicProduct);
 }
 
 export async function getProduct(slug: string): Promise<SeedProduct | null> {
-  const row = await db.liabilityProduct.findUnique({ where: { slug } });
-  return row ? mapProduct(row) : null;
+  const p = sortedProducts.find((p) => p.slug === slug);
+  return p ? toPublicProduct(p) : null;
 }
 
 export async function getFeaturedProducts(limit = 4): Promise<SeedProduct[]> {
-  const rows = await db.liabilityProduct.findMany({
-    where: { featured: true },
-    orderBy: [{ phase: "asc" }, { order: "asc" }],
-    take: limit,
-  });
-  return rows.map(mapProduct);
+  return sortedProducts
+    .filter((p) => p.featured)
+    .sort((a, b) => a.phase - b.phase)
+    .slice(0, limit)
+    .map(toPublicProduct);
 }
 
 export async function searchProducts(q: string): Promise<SeedProduct[]> {
-  const rows = await db.liabilityProduct.findMany({
-    where: {
-      OR: [
-        { nameFa: { contains: q } },
-        { summaryFa: { contains: q } },
-        { audienceFa: { contains: q } },
-        { nameEn: { contains: q } },
-      ],
-    },
-    orderBy: { order: "asc" },
-    take: 12,
-  });
-  return rows.map(mapProduct);
+  const needle = q.trim().toLowerCase();
+  if (!needle) return [];
+  return sortedProducts
+    .filter((p) =>
+      [p.nameFa, p.summaryFa, p.audienceFa, p.nameEn].some((field) =>
+        field.toLowerCase().includes(needle),
+      ),
+    )
+    .slice(0, 12)
+    .map(toPublicProduct);
 }
 
+// ─── سوالات متداول ─────────────────────────────────────────────────
+
 export async function getProductFaqs(slug: string): Promise<SeedFaq[]> {
-  const rows = await db.faq.findMany({
-    where: { productSlug: slug },
-    orderBy: { order: "asc" },
-  });
-  return rows.map((r) => ({ question: r.question, answer: r.answer }));
+  const p = sortedProducts.find((p) => p.slug === slug);
+  return p ? p.faqs.map((f) => ({ question: f.question, answer: f.answer })) : [];
 }
 
 export async function getGeneralFaqs(): Promise<SeedGeneralFaq[]> {
-  const rows = await db.faq.findMany({
-    where: { productSlug: null },
-    orderBy: { order: "asc" },
-  });
-  return rows.map((r) => ({
-    question: r.question,
-    answer: r.answer,
-    group: (r.group ?? "definition") as SeedGeneralFaq["group"],
+  return generalFaqs.map((f) => ({
+    question: f.question,
+    answer: f.answer,
+    group: f.group,
   }));
 }
 
+// ─── شهرها ─────────────────────────────────────────────────────────
+
+const sortedCities: SeedCity[] = [...citySeed].sort((a, b) => a.order - b.order);
+
 export async function getCities(): Promise<SeedCity[]> {
-  const rows = await db.city.findMany({ orderBy: { order: "asc" } });
-  return rows.map((r) => ({
-    slug: r.slug,
-    nameFa: r.nameFa,
-    province: r.province,
-    intro: r.intro,
-    industries: r.industries as unknown as string[],
-    productSlugs: r.productSlugs as unknown as string[],
-    faqs: r.faqs as unknown as SeedFaq[],
-    order: r.order,
-  }));
+  return sortedCities;
 }
 
 export async function getCity(slug: string): Promise<SeedCity | null> {
-  const row = await db.city.findUnique({ where: { slug } });
-  if (!row) return null;
-  return {
-    slug: row.slug,
-    nameFa: row.nameFa,
-    province: row.province,
-    intro: row.intro,
-    industries: row.industries as unknown as string[],
-    productSlugs: row.productSlugs as unknown as string[],
-    faqs: row.faqs as unknown as SeedFaq[],
-    order: row.order,
-  };
+  return sortedCities.find((c) => c.slug === slug) ?? null;
 }
 
 /** شهرهایی که این محصول در فهرست خدمات‌شان است — لینک‌سازی متقابل شهر↔محصول */
 export async function getCitiesForProduct(slug: string): Promise<SeedCity[]> {
-  const cities = await getCities();
-  return cities.filter((c) => c.productSlugs.includes(slug)).slice(0, 6);
+  return sortedCities.filter((c) => c.productSlugs.includes(slug)).slice(0, 6);
 }
 
-export async function getArticles(): Promise<
-  (SeedArticle & { publishedAt: Date; updatedAt: Date })[]
-> {
-  const rows = await db.article.findMany({ orderBy: { publishedAt: "asc" } });
-  return rows.map((r) => ({
-    slug: r.slug,
-    title: r.title,
-    excerpt: r.excerpt,
-    sections: r.sections as unknown as SeedArticle["sections"],
-    faqs: r.faqs as unknown as SeedFaq[],
-    keywords: r.keywords as unknown as string[],
-    seoTitle: r.seoTitle,
-    seoDescription: r.seoDescription,
-    readMinutes: r.readMinutes,
-    relatedProductSlug: r.relatedProductSlug ?? undefined,
-    authorSlug: r.authorSlug,
-    reviewDate: r.reviewDate,
-    publishedAt: r.publishedAt,
-    updatedAt: r.updatedAt,
+// ─── مقالات ────────────────────────────────────────────────────────
+
+export type StaticArticle = SeedArticle & { publishedAt: Date; updatedAt: Date };
+
+export async function getArticles(): Promise<StaticArticle[]> {
+  // ترتیب آرایه = ترتیب inجکشن seed = publishedAt asc دیتابیس قبلی
+  return articleSeed.map((a) => ({
+    ...a,
+    publishedAt: new Date(SEED_PUBLISHED_AT_MS),
+    updatedAt: new Date(SEED_PUBLISHED_AT_MS),
   }));
 }
 
-export async function getArticle(slug: string) {
-  const row = await db.article.findUnique({ where: { slug } });
-  if (!row) return null;
-  const article: SeedArticle & { publishedAt: Date; updatedAt: Date } = {
-    slug: row.slug,
-    title: row.title,
-    excerpt: row.excerpt,
-    sections: row.sections as unknown as SeedArticle["sections"],
-    faqs: row.faqs as unknown as SeedFaq[],
-    keywords: row.keywords as unknown as string[],
-    seoTitle: row.seoTitle,
-    seoDescription: row.seoDescription,
-    readMinutes: row.readMinutes,
-    relatedProductSlug: row.relatedProductSlug ?? undefined,
-    authorSlug: row.authorSlug,
-    reviewDate: row.reviewDate,
-    publishedAt: row.publishedAt,
-    updatedAt: row.updatedAt,
+export async function getArticle(slug: string): Promise<StaticArticle | null> {
+  const a = articleSeed.find((a) => a.slug === slug);
+  if (!a) return null;
+  return {
+    ...a,
+    publishedAt: new Date(SEED_PUBLISHED_AT_MS),
+    updatedAt: new Date(SEED_PUBLISHED_AT_MS),
   };
-  return article;
 }
+
+// ─── نویسندگان و منابع حقوقی ───────────────────────────────────────
 
 export async function getAuthors() {
-  const rows = await db.author.findMany({ orderBy: { order: "asc" } });
-  return rows.map((r) => ({
-    slug: r.slug,
-    name: r.name,
-    roleFa: r.roleFa,
-    bio: r.bio,
-    credentials: r.credentials as string[],
-    order: r.order,
-  }));
+  return [...authorSeed].sort((a, b) => a.order - b.order);
 }
 
 export async function getLegalSources() {
-  const rows = await db.legalSource.findMany({ orderBy: { order: "asc" } });
-  return rows.map((r) => ({
-    title: r.title,
-    reference: r.reference,
-    description: r.description,
+  return legalSourceItems.map((l) => ({
+    title: l.title,
+    reference: l.reference,
+    description: l.description,
   }));
 }
 
 export async function getCategories() {
-  const rows = await db.liabilityCategory.findMany({ orderBy: { order: "asc" } });
-  return rows.map((r) => ({
-    key: r.key as CategoryKey,
-    nameFa: r.nameFa,
-    nameEn: r.nameEn,
-    descriptionFa: r.descriptionFa,
-    icon: r.icon ?? "Sparkles",
-    order: r.order,
-  }));
+  return [...categorySeed]
+    .sort((a, b) => a.order - b.order)
+    .map((c) => ({
+      key: c.key,
+      nameFa: c.nameFa,
+      nameEn: c.nameEn,
+      descriptionFa: c.descriptionFa,
+      icon: c.icon ?? "Sparkles",
+      order: c.order,
+    }));
 }
 
-// ─── Glossary ──────────────────────────────────────────────────────
+// ─── واژه‌نامه ──────────────────────────────────────────────────────
 
 export async function getGlossaryTerms(): Promise<SeedGlossaryTerm[]> {
-  const rows = await db.glossaryTerm.findMany({ orderBy: { order: "asc" } });
-  return rows.map((r) => ({
-    slug: r.slug,
-    title: r.title,
-    category: r.category as SeedGlossaryTerm["category"],
-    short: r.short,
-    body: r.body,
-    related: (r.related as string[]) ?? [],
-    relatedProducts: (r.relatedProducts as string[] | null) ?? undefined,
+  // ترتیب آرایه = order asc دیتابیس قبلی
+  return glossarySeed.map((t) => ({
+    slug: t.slug,
+    title: t.title,
+    category: t.category,
+    short: t.short,
+    body: t.body,
+    related: t.related ?? [],
+    relatedProducts: t.relatedProducts ?? [],
   }));
 }
 
 export async function getGlossaryTerm(
   slug: string,
 ): Promise<SeedGlossaryTerm | null> {
-  const row = await db.glossaryTerm.findUnique({ where: { slug } });
-  if (!row) return null;
+  const t = glossarySeed.find((t) => t.slug === slug);
+  if (!t) return null;
   return {
-    slug: row.slug,
-    title: row.title,
-    category: row.category as SeedGlossaryTerm["category"],
-    short: row.short,
-    body: row.body,
-    related: (row.related as string[]) ?? [],
-    relatedProducts: (row.relatedProducts as string[] | null) ?? undefined,
+    slug: t.slug,
+    title: t.title,
+    category: t.category,
+    short: t.short,
+    body: t.body,
+    related: t.related ?? [],
+    relatedProducts: t.relatedProducts ?? [],
   };
 }
 
-// ─── Reviews (فقط تأییدشده — بدون رِیتینگ جعلی) ─────────────────────
-
-export interface PublicReview {
-  id: string;
-  name: string;
-  city?: string;
-  productSlug?: string;
-  rating: number;
-  text: string;
-  createdAt: Date;
-}
-
-export async function getApprovedReviews(
-  productSlug?: string,
-): Promise<PublicReview[]> {
-  const rows = await db.review.findMany({
-    where: { status: "approved", ...(productSlug ? { productSlug } : {}) },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    city: r.city ?? undefined,
-    productSlug: r.productSlug ?? undefined,
-    rating: r.rating,
-    text: r.text,
-    createdAt: r.createdAt,
-  }));
-}
+// ─── برچسب گروه‌های سوالات متداول عمومی ────────────────────────────
 
 export const FAQ_GROUP_LABEL: Record<SeedGeneralFaq["group"], string> = {
   definition: "تعریف و مفاهیم",
