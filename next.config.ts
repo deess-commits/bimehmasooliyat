@@ -10,12 +10,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // فایل SQLite باید داخل باندل توابع serverless هم قرار بگیرد
-  // تا API Route ها (quote/contact/...) روی Vercel به دیتابیس دسترسی داشته باشند
-  outputFileTracingIncludes: {
-    "/api/**/*": ["./db/**"],
-    "/**/*": ["./db/**"],
-  },
+  // دیتابیس ابری (Prisma Postgres) است — نیازی به باندل‌کردن فایل db/ نیست.
+  // محتوای سایت استاتیک است (src/lib/data.ts) و دیتابیس فقط داده کاربر را نگه می‌دارد.
 };
 
 export default nextConfig;

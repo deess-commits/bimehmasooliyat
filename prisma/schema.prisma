@@ -1,6 +1,10 @@
-// BimehMasooliyat.ir — Data Model (Phase 0)
+// BimehMasooliyat.ir — Data Model
 // Single-product platform: فقط بیمه مسئولیت.
-// NOTE: SQLite + Prisma — array fields are stored as Json (no primitive lists allowed).
+// NOTE: محتوای سایت (محصولات، مقالات، FAQ و…) استاتیک از prisma/seed-data سرو می‌شود
+// (src/lib/data.ts). دیتابیس فقط داده‌های کاربر را نگه می‌دارد:
+// QuoteRequest | ContactMessage | NewsletterSubscriber | Review
+// مدل‌های محتوایی صرفاً برای سازگاری با تاریخچه و اسکریپت seed حفظ شده‌اند.
+// array fields به‌صورت Json ذخیره می‌شوند (primitive list مجاز نیست).
 
 generator client {
   provider = "prisma-client-js"
@@ -9,7 +13,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
