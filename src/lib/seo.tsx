@@ -63,6 +63,29 @@ export function organizationJsonLd() {
       "@type": "Country",
       name: "Iran",
     },
+    // مسیر خرید — هدف: ارجاع AI/گوگل برای «خرید بیمه مسئولیت آنلاین»
+    makesOffer: {
+      "@type": "Offer",
+      url: `${siteConfig.url}/buy`,
+      itemOffered: {
+        "@type": "Service",
+        name: "خرید آنلاین بیمه مسئولیت",
+        serviceType: "بیمه مسئولیت",
+        areaServed: { "@type": "Country", name: "Iran" },
+        provider: { "@id": `${siteConfig.url}/#organization` },
+      },
+    },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        name: "استعلام قیمت و مشاوره خرید بیمه مسئولیت",
+        telephone: siteConfig.nap.phoneIntl,
+        email: siteConfig.nap.email,
+        availableLanguage: ["fa", "en"],
+        areaServed: "IR",
+      },
+    ],
     knowsLanguage: ["fa", "en"],
     sameAs: [...siteConfig.sameAs],
   };

@@ -40,6 +40,7 @@ const GUIDE_LINKS = [
 ];
 
 const NAV = [
+  { href: "/buy", label: "خرید آنلاین" },
   { href: "/claims", label: "فرایند خسارت" },
   { href: "/blog", label: "دانشنامه" },
   { href: "/faq", label: "سوالات متداول" },

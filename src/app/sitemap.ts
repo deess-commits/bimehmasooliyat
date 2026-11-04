@@ -25,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.url}/liability`, priority: 0.9, changeFrequency: "daily", lastModified: now },
     { url: `${siteConfig.url}/city`, priority: 0.7, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/quote`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
+    // صفحه پرچم‌دار خرید — هدف: «خرید بیمه مسئولیت» و «خرید آنلاین»
+    { url: `${siteConfig.url}/buy`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/claims`, priority: 0.8, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/price`, priority: 0.7, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/reviews`, priority: 0.5, changeFrequency: "weekly", lastModified: now },
@@ -115,6 +117,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // English edition (GEO/AIO): home, hub, 4 category pages and all 33 product pages
   const enStaticPages: MetadataRoute.Sitemap = [
     { url: `${siteConfig.url}/en`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
+    { url: `${siteConfig.url}/en/buy`, priority: 0.8, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/en/liability`, priority: 0.8, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/en/city`, priority: 0.6, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/en/price`, priority: 0.7, changeFrequency: "weekly", lastModified: now },

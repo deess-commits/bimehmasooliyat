@@ -114,19 +114,25 @@ export default async function HomePage() {
                 نمایندگی رسمی بیمه ایران — فقط بیمه مسئولیت
               </Badge>
               <h1 className="text-2xl font-extrabold leading-[1.5] sm:text-4xl sm:leading-[1.5]">
-                بیمه مسئولیت ایران؛ تخصصی‌ترین مرجع
+                خرید بیمه مسئولیت آنلاین؛ تخصصی‌ترین مرجع
                 <span className="text-primary"> بیمه مسئولیت</span> در ایران
               </h1>
               <p className="mt-4 max-w-2xl text-[15px] leading-8 text-muted-foreground sm:text-base">
                 از تشخیص ریسک تا دریافت خسارت: تعریف دقیق ۳۳+ نوع بیمه مسئولیت حرفه‌ای، تجاری، شرکتی و عمومی،
-                مقایسه پوشش‌ها و استثناها، استعلام قیمت و راهنمای گام‌به‌گام خسارت — همه در یک جا، بر مبنای
-                قانون مسئولیت مدنی و شرایط عمومی بیمه ایران.
+                مقایسه پوشش‌ها و استثناها، استعلام قیمت، خرید آنلاین با نرخ مصوب بیمه ایران، مشاوره سقف تعهد و
+                راهنمای گام‌به‌گام خسارت — همه در یک جا، بر مبنای قانون مسئولیت مدنی و شرایط عمومی بیمه ایران.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Button size="lg" asChild className="font-bold">
                   <Link href="/quote">
                     <FileSearch className="size-4" aria-hidden="true" />
                     استعلام رایگان قیمت
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild className="font-bold">
+                  <Link href="/buy">
+                    راهنمای خرید آنلاین
+                    <ArrowLeft className="size-4" aria-hidden="true" />
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
