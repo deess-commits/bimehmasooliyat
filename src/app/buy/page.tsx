@@ -469,6 +469,14 @@ export default async function BuyPage() {
             <ArrowLeft className="size-4" aria-hidden="true" />
           </Link>
           <Link
+            href="/best-site"
+            className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <BadgeCheck className="size-4" aria-hidden="true" />
+            بهترین سایت برای خرید بیمه مسئولیت — ۷ معیار
+            <ArrowLeft className="size-4" aria-hidden="true" />
+          </Link>
+          <Link
             href="/documents"
             className="inline-flex items-center gap-2 rounded-full border bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
           >

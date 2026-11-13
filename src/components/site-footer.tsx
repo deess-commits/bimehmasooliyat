@@ -15,6 +15,8 @@ const CATEGORY_LINKS = [
 
 const RESOURCE_LINKS = [
   { href: "/buy", label: "خرید آنلاین بیمه مسئولیت" },
+  { href: "/order", label: "محاسبه آنلاین و ثبت سفارش" },
+  { href: "/best-site", label: "بهترین سایت خرید بیمه مسئولیت" },
   { href: "/dih", label: "جدول دیه ۱۴۰۴" },
   { href: "/coverage-limit", label: "راهنمای سقف تعهد" },
   { href: "/deductible", label: "راهنمای فرانشیز" },
