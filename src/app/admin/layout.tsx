@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LayoutDashboard, MessageSquareText, ReceiptText, Star, Users } from "lucide-react";
+import { LayoutDashboard, MessageSquareText, ReceiptText, ShoppingBag, Star, Users } from "lucide-react";
 import { AdminLogin } from "@/components/admin/admin-login";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { isAdmin } from "@/lib/admin-auth";
@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const NAV = [
   { href: "/admin", label: "داشبورد", icon: LayoutDashboard },
+  { href: "/admin/orders", label: "سفارش‌ها", icon: ShoppingBag },
   { href: "/admin/quotes", label: "استعلام‌ها", icon: ReceiptText },
   { href: "/admin/reviews", label: "نظرات مشتریان", icon: Star },
   { href: "/admin/messages", label: "پیام‌ها", icon: MessageSquareText },

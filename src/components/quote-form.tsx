@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, Send, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
@@ -51,9 +51,12 @@ export function QuoteForm({ products }: { products: SeedProduct[] }) {
       : "",
   );
   const [consent, setConsent] = useState(false);
-  // honeypot + math captcha
+  // honeypot + math captcha (تولید فقط بعد از mount — بدون hydration mismatch)
   const [website, setWebsite] = useState(""); // must stay empty
-  const [captcha, setCaptcha] = useState(() => ({ a: rand(), b: rand() }));
+  const [captcha, setCaptcha] = useState({ a: 0, b: 0 });
+  useEffect(() => {
+    setCaptcha({ a: rand(), b: rand() });
+  }, []);
 
   const product = useMemo(
     () => products.find((p) => p.slug === productSlug),

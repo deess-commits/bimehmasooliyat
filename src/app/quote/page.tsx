@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
+import { Calculator } from "lucide-react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { QuoteForm } from "@/components/quote-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +44,21 @@ export default async function QuotePage() {
         </Suspense>
 
         <aside className="space-y-5">
+          <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5">
+            <h2 className="text-sm font-extrabold">قیمت را خودتان همین حالا حساب کنید</h2>
+            <p className="mt-2 text-[13px] leading-7 text-muted-foreground">
+              برای بیمه مسئولیت پزشکان، پرستاران و پیراپزشکان و مهندسین، محاسبه‌گر آنلاین با نرخ
+              مصوب بیمه ایران ۱۴۰۵ داریم: تخصص و سقف تعهد را انتخاب کنید و قیمت نهایی را همان لحظه
+              ببینید.
+            </p>
+            <Link
+              href="/order"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Calculator className="size-4" aria-hidden="true" />
+              محاسبه آنلاین و ثبت سفارش
+            </Link>
+          </div>
           <TrustStrip variant="stack" />
           <div className="rounded-2xl border bg-card p-5">
             <h2 className="text-sm font-bold">قبل از تماس کارشناس این‌ها را آماده کنید</h2>

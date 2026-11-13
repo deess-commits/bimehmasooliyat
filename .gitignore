@@ -66,4 +66,4 @@ examples/
 mini-services/
 db/*.db-journal
 db/*.db-shm
-db/*.db-wal
+db/*.db-walupload/

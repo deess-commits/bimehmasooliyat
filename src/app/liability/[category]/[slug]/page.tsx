@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   BookMarked,
+  Calculator,
   CheckCircle2,
   ClipboardList,
   FileHeart,
@@ -37,6 +38,13 @@ import { faqJsonLd, howToJsonLd, JsonLd, serviceJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 import { INDUSTRIES } from "@/lib/industry";
 import type { CategoryKey } from "@/prisma/seed-data/types";
+
+/** محصولات دارای محاسبه‌گر آنلاین و ثبت سفارش */
+const ORDER_KIND_BY_SLUG: Record<string, string> = {
+  "medical-doctors": "doctors",
+  "nurses-paramedics": "nurses",
+  engineers: "engineers",
+};
 
 export const revalidate = 3600;
 
@@ -522,8 +530,16 @@ export default async function ProductPage({
               <Badge className="w-fit bg-primary/10 text-primary hover:bg-primary/10" variant="secondary">
                 زمان پاسخ: حداکثر {toFaDigits(1)} روز کاری
               </Badge>
+              {ORDER_KIND_BY_SLUG[product.slug] ? (
+                <Link href={`/order?kind=${ORDER_KIND_BY_SLUG[product.slug]}`}>
+                  <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
+                    <Calculator className="size-4" aria-hidden="true" />
+                    محاسبه آنلاین قیمت و ثبت سفارش
+                  </span>
+                </Link>
+              ) : null}
               <Link href={`/quote?product=${encodeURIComponent(product.nameFa)}&slug=${product.slug}`}>
-                <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
+                <span className={`inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold transition-opacity hover:opacity-90 ${ORDER_KIND_BY_SLUG[product.slug] ? "border" : "bg-primary text-primary-foreground"}`}>
                   <FileSearch className="size-4" aria-hidden="true" />
                   استعلام {product.nameFa}
                 </span>

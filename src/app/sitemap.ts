@@ -27,6 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.url}/quote`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
     // صفحه پرچم‌دار خرید — هدف: «خرید بیمه مسئولیت» و «خرید آنلاین»
     { url: `${siteConfig.url}/buy`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
+    // محاسبه آنلاین و ثبت سفارش — پزشکان/پرستاران/مهندسین
+    { url: `${siteConfig.url}/order`, priority: 0.9, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/claims`, priority: 0.8, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/price`, priority: 0.7, changeFrequency: "weekly", lastModified: now },
     { url: `${siteConfig.url}/reviews`, priority: 0.5, changeFrequency: "weekly", lastModified: now },

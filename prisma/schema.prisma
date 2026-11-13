@@ -113,6 +113,33 @@ model ContactMessage {
   createdAt DateTime @default(now())
 }
 
+// ─── سفارش‌های محاسبه‌شده آنلاین (ثبت خرید) ─────────────────────────
+
+model InsuranceOrder {
+  id            String   @id @default(cuid())
+  trackingCode  String   @unique // O-YYMMDD-XXXX
+  kind          String // doctors | nurses | engineers
+  productSlug   String
+  productName   String
+  config        Json // تمام گزینه‌های انتخابی محاسبه
+  breakdown     Json // صورت‌حساب: نرخ پایه، پوشش‌ها، تخفیف، نهایی
+  totalToman    Int // قیمت نهایی محاسبه‌شده (تومان/سال)
+  fullName      String
+  nationalId    String?
+  phone         String
+  email         String?
+  city          String?
+  postalCode    String?
+  birthYear     Int?
+  licenseNumber String? // نظام پزشکی / نظام پرستاری / نظام مهندسی
+  workAddress   String?
+  prevPolicyNumber String? // شماره بیمه‌نامه سال قبل (تخفیف عدم خسارت)
+  note          String?
+  status        String   @default("new") // new | verifying | issued | rejected
+  ipHash        String?
+  createdAt     DateTime @default(now())
+}
+
 // ─── Content: Blog / Knowledge ─────────────────────────────────────
 
 model Article {

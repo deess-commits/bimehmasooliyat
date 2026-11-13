@@ -1,5 +1,5 @@
-// ─── GET /api/track?code=Q-YYMMDD-XXXX ─────────────────────────────
-// پیگیری عمومی استعلام — بدون افشای اطلاعات شخصی (فقط وضعیت + محصول + تاریخ)
+// ─── GET /api/track?code=Q-YYMMDD-XXXX | O-YYMMDD-XXXX ─────────────
+// پیگیری عمومی استعلام و سفارش — بدون افشای اطلاعات شخصی (فقط وضعیت + محصول + تاریخ)
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,7 +13,10 @@ const trackSchema = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^Q-\d{6}-[A-Z0-9]{4}$/, "قالب کد پیگیری صحیح نیست (نمونه: Q-260101-A3B4)"),
+    .regex(
+      /^([QO])-\d{6}-[A-Z0-9]{4}$/,
+      "قالب کد پیگیری صحیح نیست (نمونه: Q-260101-A3B4)",
+    ),
 });
 
 function ipHash(req: NextRequest): string {
@@ -46,11 +49,43 @@ export async function GET(req: NextRequest) {
       { status: 422 },
     );
   }
+  const { code, kind } = { code: parsed.data.code, kind: parsed.data.code[0] }; // Q=استعلام، O=سفارش
 
   // ۳) جست‌وجو — حداقل داده لازم، بدون نام/تلفن
   try {
+    if (kind === "O") {
+      const order = await db.insuranceOrder.findUnique({
+        where: { trackingCode: code },
+        select: {
+          trackingCode: true,
+          status: true,
+          productName: true,
+          totalToman: true,
+          createdAt: true,
+        },
+      });
+      if (!order) {
+        return NextResponse.json(
+          { error: "سفارشی با این کد یافت نشد؛ کد را از صفحه ثبت سفارش بررسی کنید" },
+          { status: 404 },
+        );
+      }
+      return NextResponse.json(
+        {
+          ok: true,
+          trackingCode: order.trackingCode,
+          status: order.status,
+          productName: order.productName,
+          desiredCoverage: null,
+          totalToman: order.totalToman,
+          createdAt: order.createdAt.toISOString(),
+        },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     const row = await db.quoteRequest.findUnique({
-      where: { trackingCode: parsed.data.code },
+      where: { trackingCode: code },
       select: {
         trackingCode: true,
         status: true,

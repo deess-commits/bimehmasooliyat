@@ -1,7 +1,7 @@
 // ─── داشبورد ادمین — شمارش‌ها و آخرین استعلام‌ها ────────────────────
 
 import Link from "next/link";
-import { ArrowLeft, MessageSquareText, ReceiptText, Star, Users } from "lucide-react";
+import { ArrowLeft, MessageSquareText, ReceiptText, ShoppingBag, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,10 +26,12 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminDashboardPage() {
-  const [quotesTotal, quotesNew, reviewsPending, messages, subscribers, latest] =
+  const [quotesTotal, quotesNew, ordersNew, ordersTotal, reviewsPending, messages, subscribers, latest] =
     await Promise.all([
       db.quoteRequest.count(),
       db.quoteRequest.count({ where: { status: "new" } }),
+      db.insuranceOrder.count({ where: { status: "new" } }),
+      db.insuranceOrder.count(),
       db.review.count({ where: { status: "pending" } }),
       db.contactMessage.count(),
       db.newsletterSubscriber.count(),
@@ -49,6 +51,13 @@ export default async function AdminDashboardPage() {
     ]);
 
   const tiles = [
+    {
+      label: "سفارش‌های جدید",
+      value: ordersNew,
+      icon: ShoppingBag,
+      href: "/admin/orders",
+      note: `از مجموع ${toFaDigits(ordersTotal)} سفارش آنلاین`,
+    },
     {
       label: "استعلام‌های جدید",
       value: quotesNew,

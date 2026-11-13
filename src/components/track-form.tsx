@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { faDate } from "@/lib/format";
+import { faDate, faNumber } from "@/lib/format";
 
 interface TrackResult {
   ok: true;
@@ -18,6 +18,7 @@ interface TrackResult {
   status: string;
   productName: string | null;
   desiredCoverage: string | null;
+  totalToman?: number;
   createdAt: string;
 }
 
@@ -27,6 +28,9 @@ const STATUS_LABEL: Record<string, string> = {
   quoted: "پیش‌فاکتور رسمی ارسال شد",
   won: "خرید نهایی شد",
   lost: "منتفی شد",
+  verifying: "در حال بررسی و صدور",
+  issued: "بیمه‌نامه صادر شد",
+  rejected: "رد شده",
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -35,9 +39,13 @@ const STATUS_TONE: Record<string, string> = {
   quoted: "border-primary/25 bg-primary/10 text-primary",
   won: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   lost: "border-destructive/25 bg-destructive/10 text-destructive",
+  verifying: "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  issued: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  rejected: "border-destructive/25 bg-destructive/10 text-destructive",
 };
 
-const STEPS = ["new", "contacted", "quoted", "won"] as const;
+const QUOTE_STEPS = ["new", "contacted", "quoted", "won"] as const;
+const ORDER_STEPS = ["new", "verifying", "issued"] as const;
 
 export function TrackForm() {
   const [code, setCode] = useState("");
@@ -65,8 +73,10 @@ export function TrackForm() {
     }
   }
 
+  const isOrder = result?.trackingCode.startsWith("O-");
+  const STEPS = isOrder ? ORDER_STEPS : QUOTE_STEPS;
   const activeIdx = result ? STEPS.indexOf(result.status as (typeof STEPS)[number]) : -1;
-  const lost = result?.status === "lost";
+  const lost = result?.status === "lost" || result?.status === "rejected";
 
   return (
     <div className="space-y-6">
@@ -74,7 +84,7 @@ export function TrackForm() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <PackageSearch className="size-5 text-primary" aria-hidden="true" />
-            کد پیگیری استعلام
+            کد پیگیری استعلام یا سفارش
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -84,7 +94,7 @@ export function TrackForm() {
               <Input
                 id="track-code"
                 dir="ltr"
-                placeholder="Q-260101-A3B4"
+                placeholder="Q-260101-A3B4 یا O-260101-A3B4"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="text-start font-mono tracking-wider"
@@ -113,7 +123,9 @@ export function TrackForm() {
       {result ? (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">وضعیت استعلام <span dir="ltr" className="font-mono">{result.trackingCode}</span></CardTitle>
+            <CardTitle className="text-base">
+              وضعیت {isOrder ? "سفارش" : "استعلام"} <span dir="ltr" className="font-mono">{result.trackingCode}</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -125,6 +137,11 @@ export function TrackForm() {
               ) : null}
               {result.desiredCoverage ? (
                 <Badge variant="outline" className="text-xs">سقف موردنظر: {result.desiredCoverage}</Badge>
+              ) : null}
+              {typeof result.totalToman === "number" ? (
+                <Badge variant="outline" className="text-xs">
+                  حق بیمه محاسبه‌شده: {faNumber(result.totalToman)} تومان
+                </Badge>
               ) : null}
             </div>
 
@@ -145,7 +162,7 @@ export function TrackForm() {
               </ol>
             ) : (
               <p className="rounded-lg bg-secondary/60 p-3 text-sm leading-7 text-muted-foreground">
-                این درخواست منتفی شده است؛ در صورت تمایل می‌توانید با شرایط جدید دوباره استعلام ثبت کنید.
+                این درخواست {isOrder ? "پذیرفته نشده است" : "منتفی شده است"}؛ در صورت تمایل می‌توانید با شرایط جدید دوباره استعلام ثبت کنید.
               </p>
             )}
 
