@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product-card";
+import { searchProducts } from "@/lib/product-search";
 import type { CategoryKey, SeedProduct } from "@/prisma/seed-data/types";
 
 const CATEGORY_ORDER: CategoryKey[] = ["professional", "commercial", "corporate", "public"];
@@ -19,19 +20,15 @@ export function LiabilityExplorer({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<CategoryKey | "all">("all");
 
+  // جست‌وجوی توکنی فارسی با مترادف‌ها: «پزشک چشم» → بیمه مسئولیت پزشکان
+  const matched = useMemo(() => searchProducts(products, query), [products, query]);
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return products.filter((p) => {
-      if (active !== "all" && p.category !== active) return false;
-      if (!q) return true;
-      return (
-        p.nameFa.includes(q) ||
-        p.nameEn.toLowerCase().includes(q) ||
-        p.audienceFa.includes(q) ||
-        p.keywords.some((k) => k.toLowerCase().includes(q))
-      );
-    });
-  }, [products, query, active]);
+    if (!query.trim()) {
+      return products.filter((p) => active === "all" || p.category === active);
+    }
+    return matched.map((m) => m.product).filter((p) => active === "all" || p.category === active);
+  }, [products, matched, query, active]);
 
   const grouped = useMemo(() => {
     return CATEGORY_ORDER.map((key) => ({
@@ -51,7 +48,7 @@ export function LiabilityExplorer({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="جستجو: پزشک، کارفرما، آسانسور، D&O…"
+              placeholder="جستجو: پزشک چشم، پرستار، کارفرما، آسانسور، D&O…"
               className="ps-9"
               aria-label="جستجوی نوع بیمه مسئولیت"
               type="search"

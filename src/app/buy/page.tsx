@@ -9,6 +9,7 @@ import {
   Layers,
   ListOrdered,
   MessagesSquare,
+  Search,
   ShieldCheck,
   Users,
   Wallet,
@@ -20,6 +21,7 @@ import { CtaBanner } from "@/components/cta-banner";
 import { FaqSection } from "@/components/faq-section";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { NumberedSteps } from "@/components/numbered-steps";
+import { ProductFinder } from "@/components/product-finder";
 import { SectionHeading } from "@/components/section-heading";
 import { TrustStrip } from "@/components/trust-strip";
 import { Badge } from "@/components/ui/badge";
@@ -245,6 +247,16 @@ export default async function BuyPage() {
           text="خرید بیمه مسئولیت در ایران با ثبت استعلام آنلاین انجام می‌شود؛ نوع فعالیت و سقف دلخواه را در فرم اعلام خطر ثبت می‌کنید، پیش‌فاکتور رسمی با نرخ مصوب بیمه ایران صادر و پس از پرداخت، بیمه‌نامه بدون نیاز به مراجعه حضوری ارسال می‌شود. اعتبار بیمه‌نامه با خرید حضوری برابر است."
         />
       </div>
+
+      {/* جست‌وجوی پوشش */}
+      <section aria-labelledby="finder-h" className="mt-10">
+        <SectionHeading
+          icon={Search}
+          title="پوشش مناسب فعالیت خود را جست‌وجو کنید"
+          hint="شغل، تخصص یا رشته خود را بنویسید؛ مثلاً «پزشک چشم»، «مهندس عمران» یا «کارفرما» — بدون نگرانی از فاصله، نیم‌فاصله و حروف عربی/فارسی."
+        />
+        <ProductFinder products={products} />
+      </section>
 
       {/* گام‌ها */}
       <section aria-labelledby="steps-h" className="mt-12 max-w-3xl">

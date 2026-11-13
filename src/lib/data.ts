@@ -17,6 +17,7 @@ import type {
   SeedGlossaryTerm,
   SeedProduct,
 } from "@/prisma/seed-data/types";
+import { searchProducts as faSearchProducts } from "@/lib/product-search";
 import { professionalProducts } from "@/prisma/seed-data/products-professional";
 import { commercialProducts } from "@/prisma/seed-data/products-commercial";
 import { corporatePublicProducts } from "@/prisma/seed-data/products-corporate-public";
@@ -78,16 +79,11 @@ export async function getFeaturedProducts(limit = 4): Promise<SeedProduct[]> {
 }
 
 export async function searchProducts(q: string): Promise<SeedProduct[]> {
-  const needle = q.trim().toLowerCase();
-  if (!needle) return [];
-  return sortedProducts
-    .filter((p) =>
-      [p.nameFa, p.summaryFa, p.audienceFa, p.nameEn].some((field) =>
-        field.toLowerCase().includes(needle),
-      ),
-    )
+  if (!q.trim()) return [];
+  // موتور جست‌وجوی توکنی فارسی با مترادف‌ها (پزشک چشم → پزشکان)
+  return faSearchProducts(sortedProducts, q)
     .slice(0, 12)
-    .map(toPublicProduct);
+    .map((r) => toPublicProduct(r.product));
 }
 
 // ─── سوالات متداول ─────────────────────────────────────────────────
