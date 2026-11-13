@@ -73,9 +73,9 @@ export function TrackForm() {
     }
   }
 
-  const isOrder = result?.trackingCode.startsWith("O-");
-  const STEPS = isOrder ? ORDER_STEPS : QUOTE_STEPS;
-  const activeIdx = result ? STEPS.indexOf(result.status as (typeof STEPS)[number]) : -1;
+  const isOrder = result?.trackingCode.startsWith("O-") ?? false;
+  const STEPS: readonly string[] = isOrder ? ORDER_STEPS : QUOTE_STEPS;
+  const activeIdx = result ? STEPS.indexOf(result.status) : -1;
   const lost = result?.status === "lost" || result?.status === "rejected";
 
   return (

@@ -71,7 +71,7 @@ export function SiteHeader() {
         <nav className="hidden xl:flex items-center gap-0.5 mx-auto" aria-label="ناوبری اصلی">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-1">
+              <Button variant="ghost" size="sm" className="gap-1">
                 انواع بیمه مسئولیت
                 <ChevronDown className="size-4" aria-hidden="true" />
               </Button>
@@ -118,7 +118,13 @@ export function SiteHeader() {
           </DropdownMenu>
 
           {NAV.map((n) => (
-            <Button key={n.href} variant="ghost" size="sm" asChild className={pathname === n.href ? "bg-accent" : ""}>
+            <Button
+              key={n.href}
+              variant="ghost"
+              size="sm"
+              asChild
+              className={`px-2 ${pathname === n.href ? "bg-accent" : ""}`}
+            >
               <Link href={n.href}>{n.label}</Link>
             </Button>
           ))}
@@ -133,7 +139,7 @@ export function SiteHeader() {
                 type="search"
                 name="q"
                 placeholder="جست‌وجو…"
-                className="h-9 w-36 rounded-full border bg-background pe-9 ps-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:w-48 focus:border-primary/50"
+                className="h-9 w-28 rounded-full border bg-background pe-9 ps-4 text-sm outline-none transition-all placeholder:text-muted-foreground focus:w-44 focus:border-primary/50"
               />
             </div>
           </form>
@@ -144,7 +150,7 @@ export function SiteHeader() {
           {/* EN edition pill */}
           <Link
             href="/en"
-            className="inline-flex h-9 items-center rounded-full border px-3 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            className="inline-flex h-9 items-center rounded-full border px-2.5 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
             aria-label="English edition"
           >
             EN
@@ -157,7 +163,7 @@ export function SiteHeader() {
             <Phone className="size-4" aria-hidden="true" />
             <span dir="ltr">{siteConfig.nap.phoneDisplay}</span>
           </a>
-          <Button asChild className="hidden sm:inline-flex">
+          <Button asChild className="hidden px-3 sm:inline-flex">
             <Link href="/quote">
               <FileSearch className="size-4" aria-hidden="true" />
               استعلام قیمت

@@ -102,7 +102,7 @@ export default async function AdminOrdersPage() {
             ) : (
               rows.map((o) => {
                 const cfg = (o.config ?? {}) as ConfigShape;
-                const bd = (o.breakdown ?? {}) as PriceBreakdown;
+                const bd = (o.breakdown ?? {}) as unknown as PriceBreakdown;
                 return (
                   <TableRow key={o.id}>
                     <TableCell className="font-mono text-xs" dir="ltr">

@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
         productSlug: KIND_PRODUCT_SLUGS[data.kind],
         productName: KIND_LABELS[data.kind],
         config: data.config,
-        breakdown,
+        // PriceBreakdown → JSON سازگار با Prisma
+        breakdown: JSON.parse(JSON.stringify(breakdown)),
         totalToman: breakdown.total,
         fullName: data.fullName,
         nationalId: data.nationalId || null,

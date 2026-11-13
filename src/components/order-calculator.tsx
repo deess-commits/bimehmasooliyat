@@ -9,6 +9,8 @@ import { useSearchParams } from "next/navigation";
 import {
   BadgeCheck,
   Calculator,
+  Check,
+  ChevronDown,
   CreditCard,
   HardHat,
   Info,
@@ -31,6 +33,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   calculatePremium,
   DOCTOR_CEILINGS,
@@ -52,6 +62,8 @@ import {
   YEAR_1405,
   type OrderKind,
 } from "@/lib/pricing";
+import type { SpecialtyOption } from "@/lib/pricing-specialties";
+import { normalizeFa } from "@/lib/product-search";
 import { faNumber, toFaDigits } from "@/lib/format";
 import { siteConfig } from "@/lib/site";
 
@@ -75,6 +87,99 @@ const LICENSE_PLACEHOLDER: Record<OrderKind, string> = {
 
 function rand() {
   return Math.floor(Math.random() * 5) + 1;
+}
+
+// ── جستجو و انتخاب تخصص — Combobox با نرمال‌سازی فارسی (ی/ك/اعراب/ارقام) ──
+function SpecialtyCombobox({
+  id,
+  options,
+  value,
+  onChange,
+  placeholder,
+  searchHint,
+}: {
+  id: string;
+  options: SpecialtyOption[];
+  value: string;
+  onChange: (label: string) => void;
+  placeholder: string;
+  searchHint: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const normalized = useMemo(
+    () => options.map((o) => ({ label: o.label, riskClass: o.riskClass, norm: normalizeFa(o.label) })),
+    [options],
+  );
+  const filtered = useMemo(() => {
+    const q = normalizeFa(query.trim());
+    if (!q) return normalized;
+    return normalized.filter((o) => o.norm.includes(q));
+  }, [normalized, query]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          id={id}
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={`${id}-listbox`}
+          aria-haspopup="listbox"
+          className="flex min-h-10 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-start text-sm shadow-xs outline-none transition-[color,box-shadow] hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:border-ring"
+        >
+          <span
+            className={`min-w-0 flex-1 leading-6 ${
+              value ? "line-clamp-2" : "text-muted-foreground"
+            }`}
+          >
+            {value || placeholder}
+          </span>
+          <ChevronDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl p-0"
+        align="start"
+      >
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={searchHint}
+            value={query}
+            onValueChange={setQuery}
+          />
+          <div className="border-b px-3 py-1.5 text-[11px] text-muted-foreground">
+            {toFaDigits(filtered.length)} مورد از {toFaDigits(options.length)} تخصص — برای انتخاب، روی مورد ضربه بزنید
+          </div>
+          <CommandList id={`${id}-listbox`} className="max-h-72 nice-scroll">
+            <CommandEmpty>تخصصی با این عبارت پیدا نشد — عبارت کوتاه‌تری بنویسید.</CommandEmpty>
+            {filtered.map((o, i) => (
+              <CommandItem
+                key={`${o.label}__${i}`}
+                value={o.label}
+                onSelect={() => {
+                  onChange(o.label);
+                  setOpen(false);
+                  setQuery("");
+                }}
+                className="items-start gap-2 py-2.5 leading-6"
+              >
+                <Check
+                  className={`mt-1 size-4 shrink-0 ${
+                    value === o.label ? "text-primary opacity-100" : "opacity-0"
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1 break-words">{o.label}</span>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function OrderCalculator() {
@@ -245,6 +350,93 @@ export function OrderCalculator() {
   const noClaimOptions =
     kind === "doctors" ? NO_CLAIM_DOCTORS : kind === "nurses" ? NO_CLAIM_NURSES : NO_CLAIM_ENGINEERS;
 
+  // ── پنل قیمت — یک‌بار تعریف، دو رندر: ستون چسبان دسکتاپ + قبل از ثبت سفارش در موبایل ──
+  const pricePanel = (
+    <div className="rounded-2xl border-2 border-primary/30 bg-card p-5">
+      <h2 className="text-sm font-extrabold">صورت‌حساب محاسبه (سالانه — تومان)</h2>
+      <p className="mt-1 break-words text-[11px] leading-5 text-muted-foreground">{KIND_LABELS[kind]}</p>
+
+      <div className="mt-4 space-y-2.5 text-[13px] leading-6">
+        {priceReady && breakdown ? (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <span className="min-w-0 text-muted-foreground">نرخ پایه</span>
+              <span className="shrink-0 font-bold tabular-nums">{faNumber(breakdown.base)}</span>
+            </div>
+            <p className="break-words text-[11px] text-muted-foreground">{breakdown.baseLabel}</p>
+            {breakdown.lines.map((l) => (
+              <div key={l.label} className="flex items-start justify-between gap-3">
+                <span className="min-w-0 break-words text-muted-foreground">{l.label}</span>
+                <span className={`shrink-0 tabular-nums ${l.amount >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}`} dir="ltr">
+                  {l.amount >= 0 ? "+" : "−"}{faNumber(Math.abs(l.amount))}
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-3 border-t border-dashed pt-2.5">
+              <span className="min-w-0 text-muted-foreground">جمع با پوشش‌ها</span>
+              <span className="shrink-0 font-bold tabular-nums">{faNumber(breakdown.subtotal)}</span>
+            </div>
+            {breakdown.discount ? (
+              <div className="flex items-start justify-between gap-3">
+                <span className="min-w-0 break-words text-muted-foreground">{breakdown.discount.label}</span>
+                <span className="shrink-0 tabular-nums text-emerald-700 dark:text-emerald-400" dir="ltr">
+                  −{faNumber(Math.abs(breakdown.discount.amount))}
+                </span>
+              </div>
+            ) : null}
+            {breakdown.riders.map((l) => (
+              <div key={l.label} className="flex items-start justify-between gap-3">
+                <span className="min-w-0 break-words text-muted-foreground">{l.label}</span>
+                <span className="shrink-0 tabular-nums" dir="ltr">
+                  +{faNumber(l.amount)}
+                </span>
+              </div>
+            ))}
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-primary/10 p-3">
+              <span className="text-sm font-extrabold">قیمت نهایی</span>
+              <span className="shrink-0 text-lg font-extrabold tabular-nums text-primary">
+                {faNumber(breakdown.total)}
+                <span className="ms-1 text-xs font-bold">تومان</span>
+              </span>
+            </div>
+          </>
+        ) : manualEngineer ? (
+          <div className="rounded-xl bg-amber-500/10 p-4 text-[13px] leading-7">
+            «
+            {ENGINEER_RESPONSIBILITIES.find((r) => r.id === responsibility)?.label}
+            » محاسبه آنلاین ندارد. با کارشناس تماس بگیرید یا از{" "}
+            <a href="/quote" className="font-bold text-primary hover:underline">
+              فرم استعلام عمومی
+            </a>{" "}
+            استفاده کنید.
+            <a href={`tel:${siteConfig.nap.phone}`} className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground">
+              <PhoneCall className="size-4" aria-hidden="true" />
+              <span dir="ltr">{siteConfig.nap.phoneDisplay}</span>
+            </a>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-secondary/60 p-4 text-[13px] leading-7 text-muted-foreground">
+            {kind === "engineers"
+              ? "برای محاسبه، نوع مسئولیت، رشته و سقف خسارت مالی را انتخاب کنید."
+              : "برای محاسبه، تخصص خود را انتخاب کنید."}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-dashed pt-3.5 text-[11px] leading-5 text-muted-foreground">
+        <p className="flex items-start gap-1.5">
+          <CreditCard className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          پرداخت اقساطی: {YEAR_1405.installmentNote} — {YEAR_1405.cashDiscountNote}
+        </p>
+        <p>
+          مبنای نرخ: دیه ۱۴۰۵ — ماه عادی {faNumber(YEAR_1405.dihNormalRial / 10)} تومان و ماه
+          حرام {faNumber(YEAR_1405.dihHaramRial / 10)} تومان برای هر زیان‌دیده.
+        </p>
+        <p>قیمت نهایی صدور پس از بررسی کارشناس بیمه ایران قابل تغییر است.</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Honeypot (hidden) */}
@@ -295,22 +487,23 @@ export function OrderCalculator() {
             {kind !== "engineers" ? (
               <>
                 <div>
-                  <Label htmlFor="specialty">تخصص *</Label>
-                  <Select value={specialty} onValueChange={setSpecialty}>
-                    <SelectTrigger id="specialty" className="mt-1.5 w-full">
-                      <SelectValue placeholder="تخصص خود را انتخاب کنید…" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72 nice-scroll">
-                      {SPECIALTIES[kind].map((s) => (
-                        <SelectItem key={s.label} value={s.label}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="specialty">تخصص (قابل جستجو) *</Label>
+                  <div className="mt-1.5">
+                    <SpecialtyCombobox
+                      id="specialty"
+                      options={SPECIALTIES[kind]}
+                      value={specialty}
+                      onChange={setSpecialty}
+                      placeholder="تخصص خود را جستجو و انتخاب کنید…"
+                      searchHint={
+                        kind === "doctors"
+                          ? "مثلاً: چشم، قلب، بیهوشی، ارتوپد…"
+                          : "مثلاً: ماما، اتاق عمل، اورژانس، بیهوشی…"
+                      }
+                    />
+                  </div>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    {toFaDigits(SPECIALTIES[kind].length)} تخصص — نرخ هر تخصص بر اساس کلاس ریسک فعالیت
-                    متفاوت است.
+                    {toFaDigits(SPECIALTIES[kind].length)} تخصص — قسمتی از نام تخصص را تایپ کنید تا سریع پیدا شود؛ نرخ هر تخصص بر اساس کلاس ریسک فعالیت متفاوت است.
                   </p>
                 </div>
 
@@ -394,7 +587,7 @@ export function OrderCalculator() {
                 <div>
                   <Label htmlFor="responsibility">مسئولیت مهندس (موضوع پروانه) *</Label>
                   <Select value={responsibility} onValueChange={setResponsibility}>
-                    <SelectTrigger id="responsibility" className="mt-1.5 w-full">
+                    <SelectTrigger id="responsibility" className="mt-1.5 w-full whitespace-normal">
                       <SelectValue placeholder="نوع مسئولیت خود را انتخاب کنید…" />
                     </SelectTrigger>
                     <SelectContent className="max-h-72 nice-scroll">
@@ -409,7 +602,7 @@ export function OrderCalculator() {
                 <div>
                   <Label htmlFor="field">رشته مهندسی (موضوع پروانه) *</Label>
                   <Select value={field} onValueChange={setField}>
-                    <SelectTrigger id="field" className="mt-1.5 w-full">
+                    <SelectTrigger id="field" className="mt-1.5 w-full whitespace-normal">
                       <SelectValue placeholder="رشته مهندسی خود را انتخاب کنید…" />
                     </SelectTrigger>
                     <SelectContent className="max-h-72 nice-scroll">
@@ -424,7 +617,7 @@ export function OrderCalculator() {
                 <div>
                   <Label htmlFor="grade">پایه مهندسی</Label>
                   <Select value={grade} onValueChange={setGrade}>
-                    <SelectTrigger id="grade" className="mt-1.5 w-full">
+                    <SelectTrigger id="grade" className="mt-1.5 w-full whitespace-normal">
                       <SelectValue placeholder="پایه مهندسی خود را انتخاب کنید…" />
                     </SelectTrigger>
                     <SelectContent>
@@ -439,23 +632,44 @@ export function OrderCalculator() {
                     پایه مهندسی اثری در حق بیمه ندارد و فقط برای صدور بیمه‌نامه ثبت می‌شود.
                   </p>
                 </div>
-                <div>
-                  <Label htmlFor="financial">
-                    تعهدات خسارت مالی + دیه و هزینه پزشکی در طول مدت بیمه *
-                  </Label>
-                  <Select value={financial} onValueChange={setFinancial}>
-                    <SelectTrigger id="financial" className="mt-1.5 w-full">
-                      <SelectValue placeholder="تعهد مورد نظر را انتخاب کنید…" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64 nice-scroll">
-                      {ENGINEER_FINANCIALS.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <fieldset>
+                  <legend className="mb-2 text-[13px] font-bold">
+                    سقف خسارت مالی سالانه (تعهد اصلی) *
+                  </legend>
+                  <RadioGroup
+                    value={financial}
+                    onValueChange={setFinancial}
+                    className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4"
+                  >
+                    {ENGINEER_FINANCIALS.map((f) => (
+                      <Label
+                        key={f.id}
+                        htmlFor={`fin-${f.id}`}
+                        className={`flex cursor-pointer items-start gap-2 rounded-xl border p-2.5 text-[12px] leading-5 transition-colors ${
+                          financial === f.id ? "border-primary bg-primary/5" : "hover:border-primary/40"
+                        }`}
+                      >
+                        <RadioGroupItem id={`fin-${f.id}`} value={f.id} className="mt-0.5" />
+                        <span className="min-w-0">
+                          <span className="block font-extrabold">
+                            {f.short.replace("خسارت مالی ", "")}
+                          </span>
+                          <span className="block text-[10px] text-muted-foreground">خسارت مالی</span>
+                        </span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                  <div className="mt-2.5 rounded-xl bg-accent/50 p-3 text-[12px] leading-6">
+                    <p className="font-bold">در همه گزینه‌های بالا ثابت است:</p>
+                    <ul className="mt-1 list-disc space-y-0.5 ps-5">
+                      <li>دیه: جمعاً ۱۴۰ میلیارد ریال در طول مدت بیمه‌نامه</li>
+                      <li>هزینه پزشکی: ۱۰ میلیارد ریال</li>
+                    </ul>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      فقط سقف «خسارت مالی» روی حق بیمه اثر دارد؛ دیه و هزینه پزشکی بخش جداگانه تعهدات است و انتخاب شما را تغییر نمی‌دهد.
+                    </p>
+                  </div>
+                </fieldset>
 
                 <fieldset>
                   <legend className="mb-2 text-[13px] font-bold">کلوزهای تکمیلی (اختیاری)</legend>
@@ -486,7 +700,7 @@ export function OrderCalculator() {
                 <div>
                   <Label htmlFor="dihIncrease">پوشش افزایش ریالی دیه در سال</Label>
                   <Select value={dihIncrease} onValueChange={setDihIncrease}>
-                    <SelectTrigger id="dihIncrease" className="mt-1.5 w-full">
+                    <SelectTrigger id="dihIncrease" className="mt-1.5 w-full whitespace-normal">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -503,7 +717,7 @@ export function OrderCalculator() {
                 <div>
                   <Label htmlFor="tabareh66">تبصره ۱ ماده ۶۶ تأمین اجتماعی</Label>
                   <Select value={tabareh66} onValueChange={setTabareh66}>
-                    <SelectTrigger id="tabareh66" className="mt-1.5 w-full">
+                    <SelectTrigger id="tabareh66" className="mt-1.5 w-full whitespace-normal">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -536,7 +750,7 @@ export function OrderCalculator() {
                   : `تعداد سال تخفیف عدم خسارت بیمه ایران`}
               </Label>
               <Select value={noClaim} onValueChange={setNoClaim}>
-                <SelectTrigger id="noClaim" className="mt-1.5 w-full">
+                <SelectTrigger id="noClaim" className="mt-1.5 w-full whitespace-normal">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-64 nice-scroll">
@@ -690,6 +904,11 @@ export function OrderCalculator() {
           </div>
         </section>
 
+        {/* موبایل: مبلغ محاسبه قبل از ثبت سفارش نمایش داده می‌شود */}
+        <section className="lg:hidden" aria-label="صورت‌حساب محاسبه">
+          {pricePanel}
+        </section>
+
         {/* تایید و ثبت */}
         <section className="rounded-2xl border bg-card p-5" aria-labelledby="confirm">
           <h2 id="confirm" className="text-sm font-extrabold">
@@ -733,91 +952,12 @@ export function OrderCalculator() {
         </section>
       </div>
 
-      {/* پنل قیمت — sticky در دسکتاپ */}
-      <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="صورت‌حساب محاسبه">
-        <div className="rounded-2xl border-2 border-primary/30 bg-card p-5">
-          <h2 className="text-sm font-extrabold">صورت‌حساب محاسبه (سالانه — تومان)</h2>
-          <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{KIND_LABELS[kind]}</p>
-
-          <div className="mt-4 space-y-2.5 text-[13px] leading-6">
-            {priceReady && breakdown ? (
-              <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">نرخ پایه</span>
-                  <span className="font-bold tabular-nums">{faNumber(breakdown.base)}</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">{breakdown.baseLabel}</p>
-                {breakdown.lines.map((l) => (
-                  <div key={l.label} className="flex items-start justify-between gap-3">
-                    <span className="text-muted-foreground">{l.label}</span>
-                    <span className={`tabular-nums ${l.amount >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}`} dir="ltr">
-                      {l.amount >= 0 ? "+" : "−"}{faNumber(Math.abs(l.amount))}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between gap-3 border-t border-dashed pt-2.5">
-                  <span className="text-muted-foreground">جمع با پوشش‌ها</span>
-                  <span className="font-bold tabular-nums">{faNumber(breakdown.subtotal)}</span>
-                </div>
-                {breakdown.discount ? (
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="text-muted-foreground">{breakdown.discount.label}</span>
-                    <span className="tabular-nums text-emerald-700 dark:text-emerald-400" dir="ltr">
-                      −{faNumber(Math.abs(breakdown.discount.amount))}
-                    </span>
-                  </div>
-                ) : null}
-                {breakdown.riders.map((l) => (
-                  <div key={l.label} className="flex items-start justify-between gap-3">
-                    <span className="text-muted-foreground">{l.label}</span>
-                    <span className="tabular-nums" dir="ltr">
-                      +{faNumber(l.amount)}
-                    </span>
-                  </div>
-                ))}
-                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-primary/10 p-3">
-                  <span className="text-sm font-extrabold">قیمت نهایی</span>
-                  <span className="text-lg font-extrabold tabular-nums text-primary">
-                    {faNumber(breakdown.total)}
-                    <span className="ms-1 text-xs font-bold">تومان</span>
-                  </span>
-                </div>
-              </>
-            ) : manualEngineer ? (
-              <div className="rounded-xl bg-amber-500/10 p-4 text-[13px] leading-7">
-                «
-                {ENGINEER_RESPONSIBILITIES.find((r) => r.id === responsibility)?.label}
-                » محاسبه آنلاین ندارد. با کارشناس تماس بگیرید یا از{" "}
-                <a href="/quote" className="font-bold text-primary hover:underline">
-                  فرم استعلام عمومی
-                </a>{" "}
-                استفاده کنید.
-                <a href={`tel:${siteConfig.nap.phone}`} className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground">
-                  <PhoneCall className="size-4" aria-hidden="true" />
-                  <span dir="ltr">{siteConfig.nap.phoneDisplay}</span>
-                </a>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-secondary/60 p-4 text-[13px] leading-7 text-muted-foreground">
-                {kind === "engineers"
-                  ? "برای محاسبه، نوع مسئولیت، رشته و تعهدات مالی را انتخاب کنید."
-                  : "برای محاسبه، تخصص خود را انتخاب کنید."}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 space-y-2 border-t border-dashed pt-3.5 text-[11px] leading-5 text-muted-foreground">
-            <p className="flex items-start gap-1.5">
-              <CreditCard className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              پرداخت اقساطی: {YEAR_1405.installmentNote} — {YEAR_1405.cashDiscountNote}
-            </p>
-            <p>
-              مبنای نرخ: دیه ۱۴۰۵ — ماه عادی {faNumber(YEAR_1405.dihNormalRial / 10)} تومان و ماه
-              حرام {faNumber(YEAR_1405.dihHaramRial / 10)} تومان برای هر زیان‌دیده.
-            </p>
-            <p>قیمت نهایی صدور پس از بررسی کارشناس بیمه ایران قابل تغییر است.</p>
-          </div>
-        </div>
+      {/* پنل قیمت — دسکتاپ: ستون چسبان (در موبایل همین پنل قبل از ثبت سفارش رندر می‌شود) */}
+      <aside
+        className="hidden lg:sticky lg:top-6 lg:block lg:self-start"
+        aria-label="صورت‌حساب محاسبه"
+      >
+        {pricePanel}
       </aside>
     </div>
   );
